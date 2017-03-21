@@ -93,6 +93,8 @@ Let's look at the summary of the tree:
 # Summary of hierarchical clustering
 hc.out
 ```
+### K-means clustering
+
 
 An alternative method of clustering is _K-means clustering_. Again, we place our points in space, and decide on groups, but we do so without consideration of hierarchy. 
 
@@ -123,7 +125,7 @@ Let's look at another example. We have data about the cities in the world in the
 BigCities <- world.cities %>%
   arrange(desc(pop)) %>%
   head(4000) %>%
-  select(long, lat)
+  dplyr::select(long, lat)
 glimpse(BigCities)
 ```
 
@@ -140,4 +142,71 @@ BigCities <- BigCities %>% mutate(cluster = city_clusts)
 BigCities %>% ggplot(aes(x=long, y=lat)) +
   geom_point(aes(color = cluster), alpha = 0.5)
 ```
+
+
+
+### Principal Components Analysis
+
+Another way to learn more about the data is to reduce dimensionality. If you have ever had a course in matrix algebra, one technique to reduce the dimensionality of a matrix is called *Singular Value Decomposition* (SVD). Of course in statistics (unlike in mathematics) data are typically messy, and so we use a tool called *Principal Components Analysis* (PCA) which is, at its core, just SVD.
+
+Let's set the stage with an example. Suppose we have the heights of 100 pairs of twins (or, if you prefer, suppose you have the expression levels of 2 genes for 100 samples). Let's plot them:
+
+<img src="First plot.pdf" width = "4200" height = "4200">
+
+You will notice that the data live in two dimensions, but they appear to be somewhat linear. We can _rotate_ this plot so that it makes a bit more sense, but taking the average of the twin heights and plotting it against the difference of the heights. Let's take a look:
+
+<img src = "rotated.pdf" width = "4200" height = "4200">
+
+The two orange points are the same in each plot, and you will note that the rotation preserves the distance between them.
+
+Now suppose you have expression levels for 1000 genes, and you want to look at their plots. You can't visualize this in 1000 x 1000 space, and if you do them pairwise you will need to examine almost 500,000 graphs. This is just too much. Plus not all of the variables are, well, interesting. So we want to reduce the dimensions.
+
+One other thing to notice about the rotated graph: Most of the "action" is in the first dimension. This is the point, if you will, of PCA. It allows us to summarize our data (our features, our variables) with a smaller number of related variables that explain most of the variability of our original data. That is, PCA gives you a low-dimensional transformation of the data set such that these components contain as much as possible of the variation. It gives you a data representation in a smaller number of dimensions that are as "interesting"" as possible. By *interesting* we mean here the amount of variations of the observations in each dimension.
+
+Just as we did with the example above, we seek a normalized, linear combination of our features that has the highest variance, then the next highest, etc. 
+
+Let's work through an example, continuing our work with the NCI60 dataset:
+
+```{r}
+
+# Find the principal components of the normalized data
+pr.out <- prcomp(nci.data, scale = TRUE)
+
+# Color assignment for each of the 64 cell lines
+Cols <- function(vec){
+  cols=rainbow(length(unique(vec)))
+  return(cols[as.numeric(as.factor(vec))])
+}
+
+# Plot the principal component score vectors
+par(mfrow = c(1,2), pin=c(3,3))
+plot(pr.out$x[, 1:2], col = Cols(nci.labs), pch=19, xlab= "Z1", ylab = "Z2")
+plot(pr.out$x[, c(1,3)], col = Cols(nci.labs), pch=19, xlab= "Z1", ylab = "Z3")
+
+```
+
+These color plots aren't really all that interesting nor are they particularly informative.
+
+But wait, there's more!
+
+Each component has a value associated with it that is the percent of variance explained (PVE).
+
+```{r}
+# See what all is in the object
+summary(pr.out)
+
+plot(pr.out)
+
+pve = 100*pr.out$sdev^2/sum(pr.out$sdev^2)
+pve
+plot(pve, type = "o", ylab = "Cumulative PVE", xlab = "Principal Component", col="blue")
+plot(cumsum(pve), type = "o", ylab = "Cumulative PVE", xlab = "Principal Component", col="brown3")
+
+
+
+```
+
+
+You will notice from the first plot that there is a drop-off (elbow) in PVE from component 6 to 7. Also you will notice in the histogram that there is a substantial dropoff in PVE going from component 1 to 2. So you can safely reduce this dataset to representation by at most 6 components, and if you feel like living dangerously, to 2 components.  These are called scree plots. You should definitely look at these scree plots as you evaluate the results of a principal components analysis, and you should ask to see them as well for any that you happen upon in your reading.
+
 
