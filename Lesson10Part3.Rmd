@@ -209,4 +209,56 @@ plot(cumsum(pve), type = "o", ylab = "Cumulative PVE", xlab = "Principal Compone
 
 You will notice from the first plot that there is a drop-off (elbow) in PVE from component 6 to 7. Also you will notice in the histogram that there is a substantial dropoff in PVE going from component 1 to 2. So you can safely reduce this dataset to representation by at most 6 components, and if you feel like living dangerously, to 2 components.  These are called scree plots. You should definitely look at these scree plots as you evaluate the results of a principal components analysis, and you should ask to see them as well for any that you happen upon in your reading.
 
+### Multi-dimensional scaling
+
+Another unsupervised learning technique is Multi-dimensional Scaling (MDS). We want to know about differences between observations. So, for instance, let's consider the Khan dataset again. We are going to take differences of the individual observations and the overall mean, then we are going to use PCA again to examine the results. Except, since we are doing this on the observation - mean differences, it is no longer strictly PCA, and it is not called *Principal Coordinate Analysis* or PCoA. But the principles from PCA are still useful - we are going to use the first two principal *coordinates* to plot, because those will capture most of the variability in these differences.
+
+```{r}
+# Use the nci.data set again
+
+
+
+# Assume we have N observations and p variables in an N x P dataset
+
+dim(nci.data)
+
+d <- dist(nci.data)
+fit <- cmdscale(d, eig=TRUE, k=2)
+
+# k is the number of principal coordinates we want
+
+# view the results
+
+fit
+
+# plot it
+
+x <- fit$points[,1]
+y <- fit$points[,2]
+
+plot(x, y, xlab = "PCo1", ylab = "PCo2",
+     main = "Metric MDS", type = "n")
+text(x, y, labels = nci.labs, cex = 0.7)
+
+
+
+
+```
+
+We can also do what is called nonmetric MDS, using a function from the MASS package.
+
+```{r}
+
+library(MASS)
+
+fit <- isoMDS(d, k=2)
+
+x <- fit$points[,1]
+y <- fit$points[,2]
+
+plot(x, y, xlab = "PCo1", ylab = "PCo2",
+     main = "nonMetric MDS", type = "n")
+text(x, y, labels = nci.labs, cex = 0.7)
+
+```
 
