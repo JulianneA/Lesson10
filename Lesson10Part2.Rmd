@@ -1,0 +1,161 @@
+---
+title: "Lesson10Part2"
+author: "Vicki Hertzberg"
+date: "3/22/2017"
+output: html_document
+---
+
+All of the work that we have done with trees and forests is all fine and good except that it assumes that your division is linear. So what do you do if your data look like this graph brazenly borrowed from Gareth James?
+
+<img src="2.13.pdf"  width = "4200" height = "4200">
+
+Or like this graph also brazenly borrowed from Gareth James?
+
+<img src="9.8.pdf"  width = "4200" height = "4200">
+
+The K-nearest neighbor approach will help with the first predicament. 
+
+But for the second predicament we are going to need something different.
+
+And now for something different...
+
+Suppose that we have data that look like thus:
+
+<img src="MMCpointsonly.pdf"  width = "4200" height = "4200">
+
+These data can be perfectly separated by a hyperplane (in 2-dimensions, this is a line), like so:
+
+<img src="MMChyperplane.pdf"  width = "4200" height = "4200">
+
+
+This line is the one that is the furthest from the closest points of either group, and it is called the Maximal Margin Classifier, that is, the margins to the closest points are as large as possible for any line that you could draw, as so:
+
+<img src="MMCdash.pdf"  width = "4200" height = "4200">
+
+This classifier will only work if you can draw a hyperplane to separate the groups.
+
+The problem with MMC's - they are very sensitive to the tiny changes in the data. For instance, look at the figure below. There is only 1 point that is different from the previous scatterplot.
+
+<img src="MMConepointmore.pdf"  width = "4200" height = "4200">
+
+Yet, that causes a huge change in the MMC, as shown below:
+
+<img src="MMConepointorehyperplane.pdf"  width = "4200" height = "4200">
+
+What if your data look like this:
+
+<img src="MMCnogo.pdf"  width = "4200" height = "4200">
+
+For these data you can't draw a line that separates them.
+
+What to do?
+
+### Support Vector Classifiers
+
+The goal is to create a classifier created based on a hyperplane that may not perfectly separate classes but does offer greater robustness to the effects of individual observations, and better classification of most of the training observations. The *support vector classifier* does exactly that. This is sometimes called a *soft margin classifier* 
+
+Recall our MMC. It could be that a classifier like this might actually work - it classifies 5 wrong, but gets most right, and it should be fairly robust. The support vectors in this case are the dashed lines. The objective is to minimize prediction error, but we can allow some values to be on the incorrect side of the margin or even the incorrect side of the hyperplane. In that case the margins are considered "soft". 
+
+### Support Vector Machines
+
+All of that is fine and good, but what if we have data that look as follows (brazenly borrowed by Gareth James):
+
+<img src="9.8.pdf"  width = "4200" height = "4200">
+
+As we see on the left there appear to be at least 2, maybe 3 groups. And, as we see on the right, an SVC is useless.
+
+So we have to think about using *non-linear* boundaries instead, as shown below (brazenly borrowed by Gareth James):
+
+<img src="9.9.pdf"  width = "4200" height = "4200">
+
+So we will want to *enlarge* our feature space by using functions of our features, in particular, polynomial terms, in order to develop these boundaries. We will do this by using what is called a *kernel* function. The definition of a kernel is beyond the scope of this class. But it turns out that there are computational methods to produce these extended features in a computationally efficient manner, and that the linear SVC can be represented by these features as well. All of this will only involve what is called the inner product of two observations. For two observations X_i and X_{i'} the inner product is
+
+\begin{equation}
+
+
+
+<X_i, X_{i'}> = \sum_{j=1}^{p} {x_{ij}x_{i'j}}
+
+\end{equation}
+
+Let's look at an example or two. Consider the Khan dataset in the ISLR package. It contains expression levels for a number of genes corresponding to four types of small round blue cell tumors. There is a set of training data and a set of testing data.
+
+```{r}
+
+# Call up ISLR, which contains the dataset, and e1071, which contains the function for fitting an SVM
+
+library(ISLR)
+library(e1071)
+
+# What is in the Khan data set?
+
+names(Khan)
+
+# What are the dimensions of the objects in the Khan dataset?
+
+dim(Khan$xtrain)
+dim(Khan$xtest)
+dim(Khan$ytrain)
+dim(Khan$ytest)
+
+# How do the observations in the training and testing datasets distribute among the tumor type classes?
+
+table(Khan$ytrain)
+table(Khan$ytest)
+
+
+
+```
+
+We will use a support vector approach to predict tumor type from gene expression levels. 
+
+There are a very large number of features relative to the number of observations. In this case, we should use a linear kernel.
+
+```{r}
+
+# Create the data frame consisting of the training data
+
+dat <- data.frame(x=Khan$xtrain, y = as.factor(Khan$ytrain))
+
+# Run the svm() function on the training data using a linear kernel
+
+out <- svm(y~., data = dat, kernel = "linear")
+
+# What is in this new object created by the svm() function?
+
+summary(out)
+
+# How well does this SVM predict the training data?
+
+table(out$fitted, dat$y)
+```
+
+We see that there are no training errors. This is not surprising, since the large number of features relative to observations guarantees that you can find any number of hyperplanes that will fully separate the observations. 
+
+So what about the SVM's performance on the test observations?
+
+```{r}
+
+# Create the dataframe for the testing data
+
+dat.test <- data.frame(x=Khan$xtest, y= as.factor(Khan$ytest))
+
+# Use the SVM we just created to classify the test dataset
+
+pred.test <- predict(out, newdata = dat.test)
+
+# How well does this SVM do at classifying the test dataset?
+
+table(pred.test, dat.test$y)
+```
+
+We see that there are 2 errors, or a 10% error rate.
+
+
+
+
+
+
+
+
+
